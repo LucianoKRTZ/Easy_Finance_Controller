@@ -121,16 +121,13 @@ def execute_insert_mov_fin():
         print("Lançamento recusado")
 
 def place_table(data, column_names, column_widths, place_x, place_y):
-    # Criando a Treeview
     columns = tuple(column_names)
     tree = ttk.Treeview(root, columns=columns, show='headings', height=10)
 
-    # Definindo os títulos das columns
     for i,col in enumerate(columns):
         tree.heading(col, text=col)
         tree.column(col, anchor='center', width=column_widths[i])  # Define a largura de cada coluna
 
-    # Adicionando os dados da matriz à Treeview
     sum_output_value = 0
     sum_input_value = 0
 
@@ -142,16 +139,23 @@ def place_table(data, column_names, column_widths, place_x, place_y):
         
         tree.insert('', tk.END, values=line)
 
-    # Criando a Scrollbar e associando à Treeview
     scrollbar = ttk.Scrollbar(root, orient=tk.VERTICAL, command=tree.yview)
     tree.configure(yscroll=scrollbar.set)
 
-    # Posicionando a Treeview e a Scrollbar usando o método place
     width_value = 0
     for i in column_widths:
         width_value += int(i) 
-    tree.place(x=place_x, y=place_y, width=width_value, height=200)  # Ajuste essas coordenadas e tamanhos conforme necessário
+    tree.place(x=place_x, y=place_y, width=width_value, height=200)  
     scrollbar.place(x=int(width_value+place_x-1), y=place_y, height=200)
+
+    lbl_sum_input = tk.Label(root, text=f'Total entradas: {"{:.2f}".format(sum_input_value)}', font=("Helvetica",11), bg="white")
+    lbl_sum_output = tk.Label(root, text=f'Total saídas: {"{:.2f}".format(sum_output_value)}', font=("Helvetica",11), bg="white")
+    lbl_total = tk.Label(root, text=f'Total: {"{:.2f}".format(sum_input_value-sum_output_value)}', font=("Helvetica",11), bg="white")
+
+    lbl_sum_input.place(x=place_x ,y=place_y+200)
+    lbl_sum_output.place(x=place_x+180 ,y=place_y+200)
+    lbl_total.place(x=place_x+500 ,y=place_y+200)
+
 
 
 
@@ -189,8 +193,6 @@ def execute_query_mov_fin():
         place_table(return_insert,['Código', 'Data', 'Categoria', 'Participante', 'Movimentação', 'Valor'],[60,70,150,170,90,100],35,340)
     else:
         print("Consulta recusada")
-
-
 
 
 def layout_launch_finance():
@@ -295,8 +297,6 @@ def layout_launch_finance():
     btn_query_data.place(x=400, y=370)
 
 
-
-
 def layout_query_finance():
     """
     Set layout to query finance movements
@@ -363,6 +363,7 @@ def layout_query_finance():
     btn_query_data.place(x=275, y=230)
 
     lbl_result_query.place(x=300, y=300)
+
 
 def layout_starter():
     """
