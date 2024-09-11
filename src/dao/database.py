@@ -19,7 +19,6 @@ def disconnect():
     cur.close()
     con.close()
 
-
 def get_movement_types(cod_mov=''):
     """
     Returns the description of a movement
@@ -90,6 +89,29 @@ FROM
 
     return res
 
+def get_all_participants():
+    """
+    Returns a list of all participants
+    """
+    connect()
+
+    query = f"""
+SELECT
+	BDCODTER||' - '||BDNOMETER AS NOMETER,
+	BDAPELIDOTER,
+	BDCNPJTER,
+	BDREFTER
+FROM 
+	TERCEIRO;"""
+    
+    cur.execute(query)
+    res = cur.fetchall()
+    res = [list(i) for i in res]
+
+    disconnect()
+
+    return res
+
 def launch_financial_movement(bdreflan, bddatatrans, bddatalan, bdhoralan, bdcodcat, bddescmov, bdvlr, bdvlrdesc, bdcodter, bdcodmov):
     """
     Lauches the movement on table 'movimentacao_financeira'
@@ -112,7 +134,6 @@ def launch_financial_movement(bdreflan, bddatatrans, bddatalan, bdhoralan, bdcod
         disconnect()  
         print(e)
         return False
-
 
 def get_financial_movements(bdreflan_start, bdreflan_end, bdcodmovimentacao, bdcodcat, bdcodter):
     """
@@ -154,6 +175,29 @@ ORDER BY
         res = [list(i) for i in res]
         disconnect()  
         return res
+    except Exception as e:
+        disconnect()  
+        print(e)
+        return False
+
+
+def register_participant(bdnometer, bdapelidoter, bdcnpjter, bdrefter):
+    """
+    Register a new participant
+    """
+    connect()
+
+    query = """
+INSERT INTO public.terceiro(
+	bdnometer, bdapelidoter, bdcnpjter, bdrefter)
+	VALUES (%s, %s, %s, %s);
+    """
+
+    try:
+        cur.execute(query, (bdnometer, bdapelidoter, bdcnpjter, bdrefter))
+        con.commit() 
+        disconnect()  
+        return True
     except Exception as e:
         disconnect()  
         print(e)

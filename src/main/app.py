@@ -42,6 +42,36 @@ def validate_float_input(P):
     except ValueError:
         return False
 
+def validate_cnpj(P):
+    if P == "":
+        return True
+    try:
+        if not P.isdigit() or len(str(P))>14:
+            return False
+        return True
+    except ValueError:
+        return False
+
+def validate_nickname(P):
+    if P == "":
+        return True
+    try:
+        if len(str(P))>20:
+            return False
+        return True
+    except ValueError:
+        return False
+
+def validate_part_name(P):
+    if P == "":
+        return True
+    try:
+        if len(str(P))>250:
+            return False
+        return True
+    except ValueError:
+        return False
+
 
 def validate_reference_input(P):
     if len(P) > 7:
@@ -125,7 +155,42 @@ def execute_insert_mov_fin():
         print("Lançamento recusado")
 
 
-def place_table(data, column_names, column_widths, place_x, place_y):
+def execute_insert_part():
+    global entry_part_name, entry_part_comp, entry_part_cnpj, entry_part_nickname
+
+    competence = entry_part_comp.get()
+    name = str(entry_part_name.get()).capitalize()
+    nickname = str(entry_part_nickname.get()).capitalize()
+    cnpj = entry_part_cnpj.get()
+    if len(cnpj) == 14:
+        cnpj = "{}.{}.{}/{}-{}".format(cnpj[:2],cnpj[2:5],cnpj[5:8],cnpj[8:12],cnpj[12:])
+    else:
+        cnpj = "{}.{}.{}-{}".format(cnpj[:3],cnpj[3:6],cnpj[6:9],cnpj[9:])
+
+    if len(competence) not in [6,7] or '/' not in competence or (len(competence) == 6 and len(competence.split("/")[0] == 2)): # error, reference incomplete, slash not in reference, year is not complete
+        print("Ajuste a competência e tente novamente")
+        return False
+    else:
+        competence = f"{(int(competence.split('/')[1])*100)+int(competence.split('/')[0])}"
+
+    if name == '' or nickname == '' or len(cnpj) not in [18,14]:
+        print("Confira os dados inseridos e tente novamente")
+        return False 
+
+
+    return_insert = db.register_participant(
+        bdnometer = name,
+        bdapelidoter = nickname,
+        bdcnpjter = cnpj,
+        bdrefter = competence
+    )
+    if return_insert:
+        print("Lançamento realizado")
+    else:
+        print("Lançamento recusado")
+
+
+def place_table(data, column_names, column_widths, place_x, place_y,sum_values):
     columns = tuple(column_names)
     tree = ttk.Treeview(root, columns=columns, show='headings', height=10)
 
@@ -137,10 +202,11 @@ def place_table(data, column_names, column_widths, place_x, place_y):
     sum_input_value = 0
 
     for line in data:
-        if 'saida' in str(line[4]).lower():
-            sum_output_value += line[5]
-        elif 'entrada' in str(line[4]).lower():
-            sum_input_value += line[5]
+        if sum_values:
+            if 'saida' in str(line[4]).lower():
+                sum_output_value += line[5]
+            elif 'entrada' in str(line[4]).lower():
+                sum_input_value += line[5]
         
         tree.insert('', tk.END, values=line)
 
@@ -153,13 +219,14 @@ def place_table(data, column_names, column_widths, place_x, place_y):
     tree.place(x=place_x, y=place_y, width=width_value, height=200)  
     scrollbar.place(x=int(width_value+place_x-1), y=place_y, height=200)
 
-    lbl_sum_input = tk.Label(root, text=f'Total entradas: {"{:.2f}".format(sum_input_value)}', font=("Helvetica",11), bg="white")
-    lbl_sum_output = tk.Label(root, text=f'Total saídas: {"{:.2f}".format(sum_output_value)}', font=("Helvetica",11), bg="white")
-    lbl_total = tk.Label(root, text=f'Total: {"{:.2f}".format(sum_input_value-sum_output_value)}', font=("Helvetica",11), bg="white")
+    if sum_values:
+        lbl_sum_input = tk.Label(root, text=f'Total entradas: {"{:.2f}".format(sum_input_value)}', font=("Helvetica",11), bg="white")
+        lbl_sum_output = tk.Label(root, text=f'Total saídas: {"{:.2f}".format(sum_output_value)}', font=("Helvetica",11), bg="white")
+        lbl_total = tk.Label(root, text=f'Total: {"{:.2f}".format(sum_input_value-sum_output_value)}', font=("Helvetica",11), bg="white")
 
-    lbl_sum_input.place(x=place_x ,y=place_y+200)
-    lbl_sum_output.place(x=place_x+180 ,y=place_y+200)
-    lbl_total.place(x=place_x+500 ,y=place_y+200)
+        lbl_sum_input.place(x=place_x ,y=place_y+200)
+        lbl_sum_output.place(x=place_x+180 ,y=place_y+200)
+        lbl_total.place(x=place_x+500 ,y=place_y+200)
 
 
 def execute_query_mov_fin():
@@ -193,7 +260,18 @@ def execute_query_mov_fin():
     )
     if return_insert:
         print(return_insert)
-        place_table(return_insert,['Código', 'Data', 'Categoria', 'Participante', 'Movimentação', 'Valor'],[60,70,150,170,90,100],35,340)
+        place_table(return_insert,['Código', 'Data', 'Categoria', 'Participante', 'Movimentação', 'Valor'],[60,70,150,170,90,100],35,340, True)
+    else:
+        print("Consulta recusada")
+
+
+def execute_query_part():
+    # global entry_competence_start, entry_competence_end, drop_cat_type, drop_participants, drop_mov_type
+
+    return_query = db.get_all_participants()
+    if return_query:
+        print(return_query)
+        place_table(return_query,['Nome', 'Apelido', 'CNPJ', 'Competência'],[250,110,150,110],50,340,False)
     else:
         print("Consulta recusada")
 
@@ -382,13 +460,67 @@ def layout_starter():
     lbl_desc_2 = tk.Label(root, text="Consultas", font=("Helvetica", 15), bg="white")
     btn_query_fin = tk.Button(root, text="Movimentação financeira", font=("Helvetica", 11), bg="white", command=layout_query_finance, width=25,height=2)
 
+    btn_register_part = tk.Button(root, text="Cadastrar participante", font=("Helvetica", 11), bg="white", command=layout_register_participant, width=25,height=2)
+
     lbl_desc_1.place(x=110,y=150)
     btn_launch_fin.place(x=50,y=200)
     
     lbl_desc_2.place(x=525,y=150)
     btn_query_fin.place(x=450,y=200)
+    
+    btn_register_part.place(x=50,y=275)
 
 
+def layout_register_participant():
+    """
+    Set layout to register new participants
+    """
+    global entry_part_name, entry_part_comp, entry_part_cnpj, entry_part_nickname
+    remove_widgets()
+    execute_query_part()
+    
+    lbl_title = tk.Label(root, text='Cadastro de participantes', font=('Helvetica',15), bg='white')
+
+    lbl_part_name = tk.Label(root, text='Nome', font=('Helvetica',9), bg='white')
+    entry_part_name = tk.Entry(root, width=98, bg="#FAF3E0", validate="key", validatecommand=(root.register(validate_part_name), '%P'))
+
+    lbl_part_nickname = tk.Label(root, text='Apelido', font=('Helvetica',9), bg='white')
+    entry_part_nickname = tk.Entry(root, width=20, bg="#FAF3E0", validate="key", validatecommand=(root.register(validate_nickname), '%P'))
+   
+    lbl_part_cnpj = tk.Label(root, text='CNPJ', font=('Helvetica',9), bg='white')
+    entry_part_cnpj = tk.Entry(root, width=14, bg="#FAF3E0", validate="key", validatecommand=(root.register(validate_cnpj), '%P'))
+   
+    lbl_part_comp = tk.Label(root, text='Competência', font=('Helvetica',9), bg='white')
+    entry_part_comp = tk.Entry(root, width=7, bg="#FAF3E0", validate="key", validatecommand=(root.register(validate_reference_input), '%P'))
+
+
+    btn_register = tk.Button(root, text="Registrar participante",font=("Helvetica",9), bg="#E8F5E9", width=25, height=2, command=execute_insert_part)
+    btn_query_part = tk.Button(root, text="Consultar participantes",font=("Helvetica",9), bg="#E3F2FD", width=25, height=2, command=execute_query_part)
+
+    lbl_data_info = tk.Label(root, text="Participantes cadastrados", font=('Helvetica',15), bg='white')
+
+
+
+    lbl_title.place(x=250, y=80)
+
+    lbl_part_name.place(x=50,y=130)
+    entry_part_name.place(x=98,y=132)
+
+    lbl_part_nickname.place(x=50,y=160)
+    entry_part_nickname.place(x=98,y=162)
+
+    lbl_part_cnpj.place(x=300,y=160)
+    entry_part_cnpj.place(x=340,y=162)
+
+    lbl_part_comp.place(x=562,y=160)
+    entry_part_comp.insert(0, current_competence)
+    entry_part_comp.config(state="readonly")
+    entry_part_comp.place(x=643,y=162)
+
+    btn_register.place(x=50,y=220)
+    btn_query_part.place(x=503,y=220)
+    
+    lbl_data_info.place(x=250, y=290)
 
 
 if __name__ == '__main__':
