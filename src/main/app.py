@@ -23,8 +23,8 @@ current_time = datetime.now().strftime("%H:%M:%S")
 current_competence = date.today().__format__("%m/%Y")
 
 def remove_widgets():
-    global png_logo, lbl_logo, lbl_logo
-    main_widgets = [png_logo, lbl_logo, lbl_logo]
+    global png_logo, lbl_logo, lbl_logo, btn_return
+    main_widgets = [png_logo, lbl_logo, lbl_logo, btn_return]
 
     for widget in root.winfo_children():
         if widget not in main_widgets:
@@ -42,6 +42,7 @@ def validate_float_input(P):
     except ValueError:
         return False
 
+
 def validate_reference_input(P):
     if len(P) > 7:
         return False
@@ -50,6 +51,7 @@ def validate_reference_input(P):
     if (not P[:2].isdigit() or (len(P) > 3 and not P[3:].isdigit())) and str(P) != '':
         return False
     return True
+
 
 def validate_date_input(P):
     if len(P) > 10:
@@ -60,12 +62,14 @@ def validate_date_input(P):
         return False
     return True
 
+
 def validate_description(event):
     global text_description
     text = text_description.get("1.0", "end-1c")
     if len(text) > 400:
         text_description.delete("1.0", "end-1c")
         text_description.insert("1.0", text[:400])
+
 
 def execute_insert_mov_fin():
     global entry_competence, entry_date_trans, drop_mov_type, entry_date_launch, entry_time_launch, drop_cat_type, text_description, entry_value_trans, entry_dicount_trans, drop_participants
@@ -120,6 +124,7 @@ def execute_insert_mov_fin():
     else:
         print("Lançamento recusado")
 
+
 def place_table(data, column_names, column_widths, place_x, place_y):
     columns = tuple(column_names)
     tree = ttk.Treeview(root, columns=columns, show='headings', height=10)
@@ -155,8 +160,6 @@ def place_table(data, column_names, column_widths, place_x, place_y):
     lbl_sum_input.place(x=place_x ,y=place_y+200)
     lbl_sum_output.place(x=place_x+180 ,y=place_y+200)
     lbl_total.place(x=place_x+500 ,y=place_y+200)
-
-
 
 
 def execute_query_mov_fin():
@@ -395,10 +398,14 @@ if __name__ == '__main__':
     root.resizable(width=False, height=False)
     root.config(bg='white')
     
+
     png_logo = Image.open(r'src\assets\logo_efc.png')
     png_logo = ImageTk.PhotoImage(png_logo)
     lbl_logo = tk.Label(root, image=png_logo, highlightcolor='white',highlightthickness=False, border=0)
     lbl_logo.place(x=315, y=5)
+
+    btn_return = tk.Button(root, text="Início", font=("Helvetica", 11), bg="white", command=layout_starter, width=7,height=1)
+    btn_return.place(x=610, y=7)
     
     layout_starter()
     root.mainloop()
