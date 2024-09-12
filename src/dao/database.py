@@ -45,24 +45,41 @@ ORDER BY BDCODMOVIMENTACAO;"""
 
     return res
 
-def get_categories():
+def get_categories(table=False):
     """
     Returns the description of financial categories
     """
     connect()
+    if table:
+        query = f"""SELECT 
+        BDCODCAT,
+        BDDESCCAT,
+        REPLACE(TO_CHAR(EXTRACT(DAY FROM BDDATACADASTRO), 'FM00') || '/' ||
+        TO_CHAR(EXTRACT(MONTH FROM BDDATACADASTRO), 'FM00') || '/' ||
+        TO_CHAR(EXTRACT(YEAR FROM BDDATACADASTRO), '0000'),' ','') AS BDDATACADASTRO
+    FROM
+        CATEGORIA_MOVIMENTACAO
+    WHERE
+        BDSTATUS IS TRUE
+    ORDER BY 
+        BDCODCAT;"""
+        cur.execute(query)
+        res = cur.fetchall()
+        res = [list(i) for i in res]
 
-    query = f"""SELECT 
-	BDCODCAT||' - '||BDDESCCAT
-FROM
-	CATEGORIA_MOVIMENTACAO
-WHERE
-	BDSTATUS IS TRUE
-ORDER BY 
-	BDCODCAT;"""
+    else:
+        query = f"""SELECT 
+        BDCODCAT||' - '||BDDESCCAT
+    FROM
+        CATEGORIA_MOVIMENTACAO
+    WHERE
+        BDSTATUS IS TRUE
+    ORDER BY 
+        BDCODCAT;"""
     
-    cur.execute(query)
-    res = cur.fetchall()
-    res = [list(i)[0] for i in res]
+        cur.execute(query)
+        res = cur.fetchall()
+        res = [list(i)[0] for i in res]
 
     disconnect()
 
@@ -180,7 +197,6 @@ ORDER BY
         print(e)
         return False
 
-
 def register_participant(bdnometer, bdapelidoter, bdcnpjter, bdrefter):
     """
     Register a new participant
@@ -195,6 +211,27 @@ INSERT INTO public.terceiro(
 
     try:
         cur.execute(query, (bdnometer, bdapelidoter, bdcnpjter, bdrefter))
+        con.commit() 
+        disconnect()  
+        return True
+    except Exception as e:
+        disconnect()  
+        print(e)
+        return False
+
+def register_category(bddesccat, bddatacadastro, bdstatus):
+    """
+    Register a new category on database
+    """
+
+    connect()
+    query = """
+INSERT INTO public.categoria_movimentacao(
+	bddesccat, bddatacadastro, bdstatus)
+	VALUES (%s, %s, %s);
+"""
+    try:
+        cur.execute(query, (bddesccat, bddatacadastro, bdstatus))
         con.commit() 
         disconnect()  
         return True

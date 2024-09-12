@@ -42,6 +42,7 @@ def validate_float_input(P):
     except ValueError:
         return False
 
+
 def validate_cnpj(P):
     if P == "":
         return True
@@ -52,6 +53,7 @@ def validate_cnpj(P):
     except ValueError:
         return False
 
+
 def validate_nickname(P):
     if P == "":
         return True
@@ -61,6 +63,7 @@ def validate_nickname(P):
         return True
     except ValueError:
         return False
+
 
 def validate_part_name(P):
     if P == "":
@@ -190,43 +193,27 @@ def execute_insert_part():
         print("Lançamento recusado")
 
 
-def place_table(data, column_names, column_widths, place_x, place_y,sum_values):
-    columns = tuple(column_names)
-    tree = ttk.Treeview(root, columns=columns, show='headings', height=10)
+def execute_insert_category():
+    global entry_name_cat, entry_date_cat
 
-    for i,col in enumerate(columns):
-        tree.heading(col, text=col)
-        tree.column(col, anchor='center', width=column_widths[i])  # Define a largura de cada coluna
+    name = entry_name_cat.get().capitalize()
+    date = entry_date_cat.get()
+    splited_date = date.split('/')
+    date = f"{splited_date[2]}-{splited_date[1]}-{splited_date[0]}"
 
-    sum_output_value = 0
-    sum_input_value = 0
+    if len(name) < 3:
+        print("Nome de categoria inválido!")
+        return False
 
-    for line in data:
-        if sum_values:
-            if 'saida' in str(line[4]).lower():
-                sum_output_value += line[5]
-            elif 'entrada' in str(line[4]).lower():
-                sum_input_value += line[5]
-        
-        tree.insert('', tk.END, values=line)
-
-    scrollbar = ttk.Scrollbar(root, orient=tk.VERTICAL, command=tree.yview)
-    tree.configure(yscroll=scrollbar.set)
-
-    width_value = 0
-    for i in column_widths:
-        width_value += int(i) 
-    tree.place(x=place_x, y=place_y, width=width_value, height=200)  
-    scrollbar.place(x=int(width_value+place_x-1), y=place_y, height=200)
-
-    if sum_values:
-        lbl_sum_input = tk.Label(root, text=f'Total entradas: {"{:.2f}".format(sum_input_value)}', font=("Helvetica",11), bg="white")
-        lbl_sum_output = tk.Label(root, text=f'Total saídas: {"{:.2f}".format(sum_output_value)}', font=("Helvetica",11), bg="white")
-        lbl_total = tk.Label(root, text=f'Total: {"{:.2f}".format(sum_input_value-sum_output_value)}', font=("Helvetica",11), bg="white")
-
-        lbl_sum_input.place(x=place_x ,y=place_y+200)
-        lbl_sum_output.place(x=place_x+180 ,y=place_y+200)
-        lbl_total.place(x=place_x+500 ,y=place_y+200)
+    return_insert = db.register_category(
+        bddesccat = name,
+        bddatacadastro = date,
+        bdstatus = True
+    )
+    if return_insert:
+        print("Lançamento realizado")
+    else:
+        print("Lançamento recusado")
 
 
 def execute_query_mov_fin():
@@ -274,6 +261,56 @@ def execute_query_part():
         place_table(return_query,['Nome', 'Apelido', 'CNPJ', 'Competência'],[250,110,150,110],50,340,False)
     else:
         print("Consulta recusada")
+
+
+def execute_query_category():
+    # global entry_competence_start, entry_competence_end, drop_cat_type, drop_participants, drop_mov_type
+
+    return_query = db.get_categories(True)
+    if return_query:
+        print(return_query)
+        place_table(return_query,['Código','Nome','Data'],[60,280,90],150,370,False)
+    else:
+        print("Consulta recusada")
+
+
+def place_table(data, column_names, column_widths, place_x, place_y,sum_values):
+    columns = tuple(column_names)
+    tree = ttk.Treeview(root, columns=columns, show='headings', height=10)
+
+    for i,col in enumerate(columns):
+        tree.heading(col, text=col)
+        tree.column(col, anchor='center', width=column_widths[i])  # Define a largura de cada coluna
+
+    sum_output_value = 0
+    sum_input_value = 0
+
+    for line in data:
+        if sum_values:
+            if 'saida' in str(line[4]).lower():
+                sum_output_value += line[5]
+            elif 'entrada' in str(line[4]).lower():
+                sum_input_value += line[5]
+        
+        tree.insert('', tk.END, values=line)
+
+    scrollbar = ttk.Scrollbar(root, orient=tk.VERTICAL, command=tree.yview)
+    tree.configure(yscroll=scrollbar.set)
+
+    width_value = 0
+    for i in column_widths:
+        width_value += int(i) 
+    tree.place(x=place_x, y=place_y, width=width_value, height=200)  
+    scrollbar.place(x=int(width_value+place_x-1), y=place_y, height=200)
+
+    if sum_values:
+        lbl_sum_input = tk.Label(root, text=f'Total entradas: {"{:.2f}".format(sum_input_value)}', font=("Helvetica",11), bg="white")
+        lbl_sum_output = tk.Label(root, text=f'Total saídas: {"{:.2f}".format(sum_output_value)}', font=("Helvetica",11), bg="white")
+        lbl_total = tk.Label(root, text=f'Total: {"{:.2f}".format(sum_input_value-sum_output_value)}', font=("Helvetica",11), bg="white")
+
+        lbl_sum_input.place(x=place_x ,y=place_y+200)
+        lbl_sum_output.place(x=place_x+180 ,y=place_y+200)
+        lbl_total.place(x=place_x+500 ,y=place_y+200)
 
 
 def layout_launch_finance():
@@ -446,6 +483,46 @@ def layout_query_finance():
     lbl_result_query.place(x=300, y=300)
 
 
+def layout_register_category():
+    """
+    Set a layout to register new categories
+    """
+    global entry_name_cat, entry_date_cat
+
+    remove_widgets()
+    return_query = db.get_categories(True) 
+
+    lbl_title = tk.Label(root, text='Cadastro de categorias', font=('Helvetica',15), bg='white')
+
+    lbl_name_cat = tk.Label(root, text='Nome', font=('Helvetica', 9), bg='white')
+    entry_name_cat = tk.Entry(root, width=65, bg="#FAF3E0", validate="key", validatecommand=(root.register(validate_part_name), '%P'))
+
+    lbl_date_cat = tk.Label(root, text='Data de cadastro', font=('Helvetica', 9), bg='white')
+    entry_date_cat = tk.Entry(root, width=10, bg="#FAF3E0")
+
+    btn_register_category = tk.Button(root, text="Registrar categoria",font=("Helvetica",9), bg="#E8F5E9", width=25, height=2, command=execute_insert_category)
+    btn_query_category = tk.Button(root, text="Consultar categorias",font=("Helvetica",9), bg="#E3F2FD", width=25, height=2, command=execute_query_category)
+
+    lbl_info_query = tk.Label(root, text='Categorias cadastradas', font=('Helvetica',15), bg='white')
+
+    place_table(return_query,['Código','Nome','Data'],[60,280,90],150,370,False)
+
+    lbl_title.place(x=250, y=80)
+
+    lbl_name_cat.place(x=50, y=130)
+    entry_name_cat.place(x=93, y=132)
+
+    lbl_date_cat.place(x=515,y=130)
+    entry_date_cat.insert(0,current_date)
+    entry_date_cat.config(state='readonly')
+    entry_date_cat.place(x=620,y=132)
+    
+    btn_register_category.place(x=100,y=200)
+    btn_query_category.place(x=450,y=200)
+
+    lbl_info_query.place(x=255, y=300)
+
+
 def layout_starter():
     """
     Set the starter layout, all functions are disponibilized in this layout 
@@ -462,6 +539,8 @@ def layout_starter():
 
     btn_register_part = tk.Button(root, text="Cadastrar participante", font=("Helvetica", 11), bg="white", command=layout_register_participant, width=25,height=2)
 
+    btn_register_cat = tk.Button(root, text="Cadastrar categoria", font=("Helvetica", 11), bg="white", command=layout_register_category, width=25,height=2)
+
     lbl_desc_1.place(x=110,y=150)
     btn_launch_fin.place(x=50,y=200)
     
@@ -469,6 +548,8 @@ def layout_starter():
     btn_query_fin.place(x=450,y=200)
     
     btn_register_part.place(x=50,y=275)
+
+    btn_register_cat.place(x=50,y=350)
 
 
 def layout_register_participant():
